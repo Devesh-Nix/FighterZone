@@ -49,8 +49,14 @@ const characters = [
   },
 ];
 
+const arenas = [
+  { id: 0, name: "Classic Arena", description: "Traditional wooden fighting stage" },
+  { id: 1, name: "Dojo", description: "Japanese martial arts training hall" },
+  { id: 2, name: "Cyber Arena", description: "Futuristic neon battleground" },
+];
+
 export function CharacterSelection() {
-  const { selectedCharacter, setSelectedCharacter, roomId, setGamePhase } = useFightingGame();
+  const { selectedCharacter, setSelectedCharacter, selectedArena, setSelectedArena, roomId, setGamePhase, isHost } = useFightingGame();
   const { playerReady } = useSocket();
   const [isReady, setIsReady] = useState(false);
 
@@ -83,8 +89,31 @@ export function CharacterSelection() {
           )}
         </div>
 
+        {/* Arena Selection (Host only) */}
+        {isHost && (
+          <div className="mb-6 bg-black/50 backdrop-blur-sm p-4 rounded-lg border-2 border-purple-500">
+            <h3 className="text-white font-bold text-lg mb-3 text-center">SELECT ARENA</h3>
+            <div className="grid grid-cols-3 gap-3">
+              {arenas.map((arena) => (
+                <div
+                  key={arena.id}
+                  className={`cursor-pointer p-3 rounded-lg border-2 transition-all ${
+                    selectedArena === arena.id
+                      ? "border-purple-400 bg-purple-400/20"
+                      : "border-white/20 bg-white/5 hover:border-white/40"
+                  }`}
+                  onClick={() => setSelectedArena(arena.id)}
+                >
+                  <div className="text-white font-semibold text-sm">{arena.name}</div>
+                  <div className="text-gray-400 text-xs mt-1">{arena.description}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Character Grid */}
-        <div className="grid grid-cols-3 gap-6 mb-8 max-h-[60vh] overflow-y-auto px-2">
+        <div className="grid grid-cols-3 gap-6 mb-6 max-h-[45vh] overflow-y-auto px-2">
           {characters.map((character) => (
             <Card
               key={character.id}

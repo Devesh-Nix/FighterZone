@@ -27,6 +27,7 @@ interface FightingGameState {
   roundWinner: number | null;
   matchWinner: number | null;
   selectedCharacter: number;
+  selectedArena: number;
 
   // Actions
   setGamePhase: (phase: GamePhase) => void;
@@ -40,6 +41,7 @@ interface FightingGameState {
   setRoundWinner: (winner: number | null) => void;
   setMatchWinner: (winner: number | null) => void;
   setSelectedCharacter: (characterId: number) => void;
+  setSelectedArena: (arenaId: number) => void;
   resetGame: () => void;
   getLocalPlayer: () => PlayerData | null;
   getOpponent: () => PlayerData | null;
@@ -57,6 +59,7 @@ export const useFightingGame = create<FightingGameState>()(
     roundWinner: null,
     matchWinner: null,
     selectedCharacter: 0,
+    selectedArena: 0,
 
     setGamePhase: (phase) => set({ gamePhase: phase }),
     
@@ -87,6 +90,8 @@ export const useFightingGame = create<FightingGameState>()(
     
     setSelectedCharacter: (characterId) => set({ selectedCharacter: characterId }),
     
+    setSelectedArena: (arenaId) => set({ selectedArena: arenaId }),
+    
     resetGame: () => set({
       gamePhase: "menu",
       roomId: null,
@@ -98,6 +103,7 @@ export const useFightingGame = create<FightingGameState>()(
       roundWinner: null,
       matchWinner: null,
       selectedCharacter: 0,
+      selectedArena: 0,
     }),
     
     getLocalPlayer: () => {
