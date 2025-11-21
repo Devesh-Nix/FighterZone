@@ -16,6 +16,7 @@ enum Controls {
   punch = "punch",
   kick = "kick",
   block = "block",
+  special = "special",
 }
 
 export function PlayerController() {
@@ -142,7 +143,10 @@ export function PlayerController() {
     }
 
     if (canAttack) {
-      if (keys.punch) {
+      if (keys.special && player.specialEnergy >= 100) {
+        performSpecialMove();
+        lastAttackTimeRef.current = currentTime;
+      } else if (keys.punch) {
         performAttack("punch", 10, 1.5);
         lastAttackTimeRef.current = currentTime;
       } else if (keys.kick) {
@@ -163,9 +167,67 @@ export function PlayerController() {
         position: [position.x, position.y, position.z],
         velocity: [velocity.x, velocity.y, velocity.z],
         isBlocking: keys.block,
+        comboCount: player.comboCount,
+        specialEnergy: player.specialEnergy,
       });
     }
   });
+
+  const performSpecialMove = () => {
+    if (!localPlayerId) return;
+
+    const player = players.get(localPlayerId);
+    if (!player || player.specialEnergy < 100) return;
+
+    // Consume special energy
+    useFightingGame.getState().updatePlayer(localPlayerId, {
+      specialEnergy: 0,
+      isAttacking: true,
+      attackType: "special",
+    });
+
+    // Character-specific special moves
+    const specialMoves = {
+      0: { name: "Fire Punch", damage: 30, range: 3.5 }, // Red Warrior
+      1: { name: "Lightning Strike", damage: 35, range: 4 }, // Blue Striker
+      2: { name: "Shadow Slash", damage: 32, range: 3 }, // Ninja
+      3: { name: "Power Slam", damage: 40, range: 2.5 }, // Wrestler
+      4: { name: "Spinning Kick", damage: 28, range: 3.5 }, // Capoeira
+      5: { name: "Elbow Strike", damage: 33, range: 3 }, // Muay Thai
+    };
+
+    const special = specialMoves[player.characterId as keyof typeof specialMoves] || specialMoves[0];
+
+    // Send special attack to server
+    sendAttack(`special_${special.name}`, { damage: special.damage, range: special.range });
+
+    // Play hit sound
+    playHit();
+
+    // Check for hit on opponent
+    const opponent = Array.from(players.values()).find(p => p.id !== localPlayerId);
+    if (opponent) {
+      const playerPos = new THREE.Vector3(...player.position);
+      const opponentPos = new THREE.Vector3(...opponent.position);
+      const distance = playerPos.distanceTo(opponentPos);
+
+      if (distance <= special.range) {
+        // Special moves break through blocking!
+        const finalDamage = opponent.isBlocking ? Math.floor(special.damage * 0.5) : special.damage;
+        confirmHit(opponent.id, finalDamage);
+        resetCombo(localPlayerId); // Specials end combos
+        console.log(`${special.name} SPECIAL HIT! Damage: ${finalDamage}`);
+      }
+    }
+
+    // Reset attack state after animation
+    setTimeout(() => {
+      useFightingGame.getState().updatePlayer(localPlayerId, {
+        isAttacking: false,
+        attackType: null,
+      });
+    }, 800);
+  };
 
   const performAttack = (attackType: string, damage: number, range: number) => {
     if (!localPlayerId) return;

@@ -127,7 +127,7 @@ export function GameUI() {
               <div>K - Kick</div>
               <div>Space - Jump</div>
               <div>L - Block</div>
-              <div>Shift - Crouch</div>
+              <div>Q - Special Move (when energy full)</div>
             </div>
           </div>
         </div>

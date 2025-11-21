@@ -26,6 +26,7 @@ enum Controls {
   punch = "punch",
   kick = "kick",
   block = "block",
+  special = "special",
 }
 
 const keyMap = [
@@ -38,6 +39,7 @@ const keyMap = [
   { name: Controls.punch, keys: ["KeyJ"] },
   { name: Controls.kick, keys: ["KeyK"] },
   { name: Controls.block, keys: ["KeyL"] },
+  { name: Controls.special, keys: ["KeyQ"] },
 ];
 
 function App() {

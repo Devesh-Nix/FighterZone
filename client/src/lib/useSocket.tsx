@@ -50,6 +50,8 @@ export function useSocket() {
           isBlocking: p.isBlocking,
           isAttacking: p.isAttacking,
           attackType: p.attackType,
+          comboCount: p.comboCount || 0,
+          specialEnergy: p.specialEnergy || 0,
         });
       });
       setPlayers(playersMap);
@@ -100,6 +102,8 @@ export function useSocket() {
           isBlocking: p.isBlocking,
           isAttacking: p.isAttacking,
           attackType: p.attackType,
+          comboCount: p.comboCount || 0,
+          specialEnergy: p.specialEnergy || 0,
         });
       });
       setPlayers(playersMap);
@@ -123,6 +127,8 @@ export function useSocket() {
           isBlocking: p.isBlocking,
           isAttacking: p.isAttacking,
           attackType: p.attackType,
+          comboCount: p.comboCount || 0,
+          specialEnergy: p.specialEnergy || 0,
         });
       });
       setPlayers(playersMap);
