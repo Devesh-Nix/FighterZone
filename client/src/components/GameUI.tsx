@@ -42,6 +42,11 @@ export function GameUI() {
                 <div className="space-y-2">
                   <Progress value={player1.health} className="h-6 bg-gray-700" />
                   <div className="text-white text-sm">{Math.round(player1.health)}%</div>
+                  {/* Special Energy Bar */}
+                  <div className="mt-2">
+                    <div className="text-xs text-yellow-400 mb-1">SPECIAL</div>
+                    <Progress value={player1.specialEnergy || 0} className="h-3 bg-gray-700" />
+                  </div>
                 </div>
                 {/* Round indicators */}
                 <div className="flex gap-2 mt-2">
@@ -76,6 +81,11 @@ export function GameUI() {
                 <div className="space-y-2">
                   <Progress value={player2.health} className="h-6 bg-gray-700" />
                   <div className="text-white text-sm">{Math.round(player2.health)}%</div>
+                  {/* Special Energy Bar */}
+                  <div className="mt-2">
+                    <div className="text-xs text-yellow-400 mb-1">SPECIAL</div>
+                    <Progress value={player2.specialEnergy || 0} className="h-3 bg-gray-700" />
+                  </div>
                 </div>
                 {/* Round indicators */}
                 <div className="flex gap-2 mt-2 justify-end">
@@ -93,6 +103,18 @@ export function GameUI() {
           </div>
         </div>
       </div>
+
+      {/* Combo Counter */}
+      {localPlayer && localPlayer.comboCount > 0 && (
+        <div className="absolute top-1/3 left-1/2 transform -translate-x-1/2 pointer-events-none">
+          <div className="text-center">
+            <div className="text-yellow-400 font-bold text-7xl animate-bounce drop-shadow-lg">
+              {localPlayer.comboCount} HITS!
+            </div>
+            <div className="text-white text-3xl font-bold mt-2">COMBO</div>
+          </div>
+        </div>
+      )}
 
       {/* Bottom - Controls hint */}
       <div className="absolute bottom-4 left-0 right-0">

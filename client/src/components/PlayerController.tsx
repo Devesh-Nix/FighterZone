@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useFrame } from "@react-three/fiber";
 import { useKeyboardControls } from "@react-three/drei";
 import { useFightingGame } from "@/lib/stores/useFightingGame";
@@ -20,13 +20,36 @@ enum Controls {
 
 export function PlayerController() {
   const [, getKeys] = useKeyboardControls<Controls>();
-  const { localPlayerId, players, gamePhase } = useFightingGame();
+  const { localPlayerId, players, gamePhase, incrementCombo, resetCombo, addSpecialEnergy, lastHitTime } = useFightingGame();
   const { sendPlayerUpdate, sendAttack, confirmHit } = useSocket();
   const { playHit } = useAudio();
   
   const velocityRef = useRef<THREE.Vector3>(new THREE.Vector3());
   const isGroundedRef = useRef(true);
   const lastAttackTimeRef = useRef(0);
+  const [comboResetTimer, setComboResetTimer] = useState<NodeJS.Timeout | null>(null);
+
+  // Reset combo after 2 seconds of no hits
+  useEffect(() => {
+    if (!localPlayerId) return;
+    
+    if (comboResetTimer) {
+      clearTimeout(comboResetTimer);
+    }
+    
+    const timer = setTimeout(() => {
+      const player = players.get(localPlayerId);
+      if (player && player.comboCount > 0) {
+        resetCombo(localPlayerId);
+      }
+    }, 2000);
+    
+    setComboResetTimer(timer);
+    
+    return () => {
+      if (timer) clearTimeout(timer);
+    };
+  }, [lastHitTime, localPlayerId]);
 
   useFrame((state, delta) => {
     if (!localPlayerId || gamePhase !== "fighting") return;
@@ -173,11 +196,15 @@ export function PlayerController() {
         // Hit landed!
         if (!opponent.isBlocking) {
           confirmHit(opponent.id, damage);
-          console.log(`${attackType} hit! Damage: ${damage}`);
+          incrementCombo(localPlayerId);
+          addSpecialEnergy(localPlayerId, 10);
+          console.log(`${attackType} hit! Damage: ${damage}, Combo: ${(players.get(localPlayerId)?.comboCount || 0) + 1}`);
         } else {
           // Blocked - reduced damage
-          confirmHit(opponent.id, Math.floor(damage * 0.3));
-          console.log(`${attackType} blocked! Reduced damage: ${Math.floor(damage * 0.3)}`);
+          const reducedDamage = Math.floor(damage * 0.3);
+          confirmHit(opponent.id, reducedDamage);
+          addSpecialEnergy(localPlayerId, 3);
+          console.log(`${attackType} blocked! Reduced damage: ${reducedDamage}`);
         }
       }
     }

@@ -14,6 +14,8 @@ interface PlayerState {
   velocity: [number, number, number];
   characterId: number;
   playerNumber: 1 | 2;
+  comboCount: number;
+  specialEnergy: number;
 }
 
 interface GameRoom {
@@ -89,7 +91,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         attackType: null,
         velocity: [0, 0, 0],
         characterId: data.characterId,
-        playerNumber: playerNumber as 1 | 2
+        playerNumber: playerNumber as 1 | 2,
+        comboCount: 0,
+        specialEnergy: 0
       };
 
       room.players.set(socket.id, playerState);
@@ -195,6 +199,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         player.isBlocking = false;
         player.isAttacking = false;
         player.attackType = null;
+        player.comboCount = 0;
+        player.specialEnergy = 0;
       });
 
       io.to(roomId).emit("round-reset", {
@@ -220,6 +226,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         player.isBlocking = false;
         player.isAttacking = false;
         player.attackType = null;
+        player.comboCount = 0;
+        player.specialEnergy = 0;
       });
 
       io.to(roomId).emit("match-reset", {

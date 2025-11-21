@@ -14,6 +14,8 @@ export interface PlayerData {
   isBlocking: boolean;
   isAttacking: boolean;
   attackType: string | null;
+  comboCount: number;
+  specialEnergy: number;
 }
 
 interface FightingGameState {
@@ -28,6 +30,8 @@ interface FightingGameState {
   matchWinner: number | null;
   selectedCharacter: number;
   selectedArena: number;
+  comboMultiplier: number;
+  lastHitTime: number;
 
   // Actions
   setGamePhase: (phase: GamePhase) => void;
@@ -42,6 +46,9 @@ interface FightingGameState {
   setMatchWinner: (winner: number | null) => void;
   setSelectedCharacter: (characterId: number) => void;
   setSelectedArena: (arenaId: number) => void;
+  incrementCombo: (playerId: string) => void;
+  resetCombo: (playerId: string) => void;
+  addSpecialEnergy: (playerId: string, amount: number) => void;
   resetGame: () => void;
   getLocalPlayer: () => PlayerData | null;
   getOpponent: () => PlayerData | null;
@@ -60,6 +67,8 @@ export const useFightingGame = create<FightingGameState>()(
     matchWinner: null,
     selectedCharacter: 0,
     selectedArena: 0,
+    comboMultiplier: 1,
+    lastHitTime: 0,
 
     setGamePhase: (phase) => set({ gamePhase: phase }),
     
@@ -92,6 +101,36 @@ export const useFightingGame = create<FightingGameState>()(
     
     setSelectedArena: (arenaId) => set({ selectedArena: arenaId }),
     
+    incrementCombo: (playerId) => {
+      const players = new Map(get().players);
+      const player = players.get(playerId);
+      if (player) {
+        player.comboCount = (player.comboCount || 0) + 1;
+        players.set(playerId, player);
+        set({ players, lastHitTime: Date.now() });
+      }
+    },
+    
+    resetCombo: (playerId) => {
+      const players = new Map(get().players);
+      const player = players.get(playerId);
+      if (player) {
+        player.comboCount = 0;
+        players.set(playerId, player);
+        set({ players });
+      }
+    },
+    
+    addSpecialEnergy: (playerId, amount) => {
+      const players = new Map(get().players);
+      const player = players.get(playerId);
+      if (player) {
+        player.specialEnergy = Math.min(100, (player.specialEnergy || 0) + amount);
+        players.set(playerId, player);
+        set({ players });
+      }
+    },
+    
     resetGame: () => set({
       gamePhase: "menu",
       roomId: null,
@@ -104,6 +143,8 @@ export const useFightingGame = create<FightingGameState>()(
       matchWinner: null,
       selectedCharacter: 0,
       selectedArena: 0,
+      comboMultiplier: 1,
+      lastHitTime: 0,
     }),
     
     getLocalPlayer: () => {
