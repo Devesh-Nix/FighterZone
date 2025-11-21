@@ -1,73 +1,103 @@
 import { Canvas } from "@react-three/fiber";
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useEffect } from "react";
 import { KeyboardControls } from "@react-three/drei";
-// import { useAudio } from "./lib/stores/useAudio";
 import "@fontsource/inter";
 
-// Import our game components
+import { useFightingGame } from "@/lib/stores/useFightingGame";
+import { useSocket } from "@/lib/useSocket";
+import { Menu } from "@/components/Menu";
+import { CharacterSelection } from "@/components/CharacterSelection";
+import { Arena } from "@/components/Arena";
+import { Fighter } from "@/components/Fighter";
+import { Lights } from "@/components/Lights";
+import { GameUI } from "@/components/GameUI";
+import { PlayerController } from "@/components/PlayerController";
+import { RoundEnd } from "@/components/RoundEnd";
+import { MatchEnd } from "@/components/MatchEnd";
+import { SoundManager } from "@/components/SoundManager";
 
-// Define control keys for the game
-// const controls = [
-//   { name: "forward", keys: ["KeyW", "ArrowUp"] },
-//   { name: "backward", keys: ["KeyS", "ArrowDown"] },
-//   { name: "leftward", keys: ["KeyA", "ArrowLeft"] },
-//   { name: "rightward", keys: ["KeyD", "ArrowRight"] },
-//   { name: "punch", keys: ["KeyJ"] },
-//   { name: "kick", keys: ["KeyK"] },
-//   { name: "block", keys: ["KeyL"] },
-//   { name: "special", keys: ["Space"] },
-// ];
+enum Controls {
+  forward = "forward",
+  back = "back",
+  left = "left",
+  right = "right",
+  jump = "jump",
+  crouch = "crouch",
+  punch = "punch",
+  kick = "kick",
+  block = "block",
+}
 
-// Main App component
+const keyMap = [
+  { name: Controls.forward, keys: ["KeyW", "ArrowUp"] },
+  { name: Controls.back, keys: ["KeyS", "ArrowDown"] },
+  { name: Controls.left, keys: ["KeyA", "ArrowLeft"] },
+  { name: Controls.right, keys: ["KeyD", "ArrowRight"] },
+  { name: Controls.jump, keys: ["Space"] },
+  { name: Controls.crouch, keys: ["ShiftLeft", "ShiftRight"] },
+  { name: Controls.punch, keys: ["KeyJ"] },
+  { name: Controls.kick, keys: ["KeyK"] },
+  { name: Controls.block, keys: ["KeyL"] },
+];
+
 function App() {
-  //const { gamePhase } = useFighting();
-  const [showCanvas, setShowCanvas] = useState(false);
+  const { gamePhase, localPlayerId, players } = useFightingGame();
+  useSocket();
 
-  // Show the canvas once everything is loaded
   useEffect(() => {
-    setShowCanvas(true);
+    console.log("FighterZone initialized");
   }, []);
 
   return (
-    <div style={{ width: '100vw', height: '100vh', position: 'relative', overflow: 'hidden' }}/>
-    // {showCanvas && (
-    //   <KeyboardControls map={controls}>
-    //     {gamePhase === 'menu' && <Menu />}
+    <KeyboardControls map={keyMap}>
+      <div style={{ width: "100vw", height: "100vh", position: "relative", overflow: "hidden" }}>
+        {gamePhase === "menu" && <Menu />}
 
-    //     {gamePhase === 'character_selection' && <CharacterSelection />}
+        {(gamePhase === "character_selection" || gamePhase === "waiting") && <CharacterSelection />}
 
-    //     {(gamePhase === 'fighting' || gamePhase === 'round_end' || gamePhase === 'match_end') && (
-    //       <>
-    //         <Canvas
-    //           shadows
-    //           camera={{
-    //             position: [0, 2, 8],
-    //             fov: 45,
-    //             near: 0.1,
-    //             far: 1000
-    //           }}
-    //           gl={{
-    //             antialias: true,
-    //             powerPreference: "default"
-    //           }}
-    //         >
-    //           <color attach="background" args={["#111111"]} />
+        {(gamePhase === "fighting" || gamePhase === "round_end" || gamePhase === "match_end") && (
+          <>
+            <Canvas
+              shadows
+              camera={{
+                position: [0, 3, 12],
+                fov: 50,
+                near: 0.1,
+                far: 1000,
+              }}
+              gl={{
+                antialias: true,
+                powerPreference: "high-performance",
+              }}
+            >
+              <color attach="background" args={["#0a0a0a"]} />
 
-    //           {/* Lighting */}
-    //           <Lights />
+              <Lights />
 
-    //           <Suspense fallback={null}>
-    //           </Suspense>
-    //         </Canvas>
-    //         <GameUI />
-    //       </>
-    //     )}
+              <Suspense fallback={null}>
+                <Arena />
+                
+                {Array.from(players.keys()).map((playerId) => (
+                  <Fighter
+                    key={playerId}
+                    playerId={playerId}
+                    isLocalPlayer={playerId === localPlayerId}
+                  />
+                ))}
+              </Suspense>
+            </Canvas>
 
-    //     <ShortcutManager />
-    //     <SoundManager />
-    //   </KeyboardControls>
-    // )}
-    //</div>
+            <GameUI />
+            <PlayerController />
+
+            {gamePhase === "round_end" && <RoundEnd />}
+            {gamePhase === "match_end" && <MatchEnd />}
+          </>
+        )}
+
+        <SoundManager />
+      </div>
+    </KeyboardControls>
   );
 }
 
