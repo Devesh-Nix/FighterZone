@@ -21,6 +21,10 @@ export function Fighter({ playerId, isLocalPlayer }: FighterProps) {
   const characterModels = [
     "/models/fighter_red.glb",
     "/models/fighter_blue.glb",
+    "/models/fighter_ninja.glb",
+    "/models/fighter_wrestler.glb",
+    "/models/fighter_capoeira.glb",
+    "/models/fighter_muaythai.glb",
   ];
 
   const modelPath = characterModels[player?.characterId || 0];

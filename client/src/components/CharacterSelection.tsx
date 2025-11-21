@@ -10,12 +10,42 @@ const characters = [
     name: "RED WARRIOR",
     description: "Martial artist with powerful strikes",
     color: "from-red-500 to-red-700",
+    style: "Balanced"
   },
   {
     id: 1,
     name: "BLUE STRIKER",
     description: "Agile kickboxer with fast combos",
     color: "from-blue-500 to-blue-700",
+    style: "Speed"
+  },
+  {
+    id: 2,
+    name: "SHADOW NINJA",
+    description: "Swift assassin with lightning attacks",
+    color: "from-gray-700 to-black",
+    style: "Speed"
+  },
+  {
+    id: 3,
+    name: "IRON GRAPPLER",
+    description: "Powerful wrestler with devastating throws",
+    color: "from-amber-600 to-orange-700",
+    style: "Power"
+  },
+  {
+    id: 4,
+    name: "FLOW DANCER",
+    description: "Capoeira master with acrobatic moves",
+    color: "from-green-500 to-teal-600",
+    style: "Technique"
+  },
+  {
+    id: 5,
+    name: "STEEL STRIKER",
+    description: "Muay Thai champion with brutal strikes",
+    color: "from-purple-600 to-pink-600",
+    style: "Power"
   },
 ];
 
@@ -54,7 +84,7 @@ export function CharacterSelection() {
         </div>
 
         {/* Character Grid */}
-        <div className="grid grid-cols-2 gap-8 mb-8">
+        <div className="grid grid-cols-3 gap-6 mb-8 max-h-[60vh] overflow-y-auto px-2">
           {characters.map((character) => (
             <Card
               key={character.id}
@@ -65,18 +95,21 @@ export function CharacterSelection() {
               }`}
               onClick={() => handleSelectCharacter(character.id)}
             >
-              <CardContent className="p-6">
+              <CardContent className="p-4">
                 <div
-                  className={`w-full h-64 rounded-lg bg-gradient-to-br ${character.color} mb-4 flex items-center justify-center`}
+                  className={`w-full h-40 rounded-lg bg-gradient-to-br ${character.color} mb-3 flex items-center justify-center`}
                 >
-                  <div className="text-white/30 text-6xl font-bold">
+                  <div className="text-white/30 text-5xl font-bold">
                     {character.name.charAt(0)}
                   </div>
                 </div>
-                <h3 className="text-2xl font-bold text-white mb-2">{character.name}</h3>
-                <p className="text-gray-300">{character.description}</p>
+                <h3 className="text-xl font-bold text-white mb-1">{character.name}</h3>
+                <p className="text-gray-400 text-sm mb-2">{character.description}</p>
+                <div className="text-xs text-yellow-400 font-semibold">
+                  Style: {character.style}
+                </div>
                 {selectedCharacter === character.id && (
-                  <div className="mt-4 text-yellow-400 font-bold text-center">
+                  <div className="mt-3 text-yellow-400 font-bold text-center">
                     ✓ SELECTED
                   </div>
                 )}
