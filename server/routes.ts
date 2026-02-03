@@ -78,7 +78,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const room = gameRooms.get(data.roomId);
       if (!room) return;
 
-      const playerNumber = room.players.size === 0 ? 1 : 2;
+      const existingPlayer = room.players.get(socket.id);
+      const playerNumber = existingPlayer ? existingPlayer.playerNumber : room.players.size === 0 ? 1 : 2;
       const startPosition: [number, number, number] = playerNumber === 1 ? [-4, 0, 0] : [4, 0, 0];
       
       const playerState: PlayerState = {
