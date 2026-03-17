@@ -15,6 +15,7 @@ import { PlayerController } from "@/components/PlayerController";
 import { RoundEnd } from "@/components/RoundEnd";
 import { MatchEnd } from "@/components/MatchEnd";
 import { SoundManager } from "@/components/SoundManager";
+import { DynamicCamera } from "@/components/DynamicCamera";
 
 enum Controls {
   forward = "forward",
@@ -72,13 +73,14 @@ function App() {
                 powerPreference: "high-performance",
               }}
             >
+              <DynamicCamera />
               <color attach="background" args={["#0a0a0a"]} />
 
               <Lights />
 
               <Suspense fallback={null}>
                 <Arena />
-                
+
                 {Array.from(players.keys()).map((playerId) => (
                   <Fighter
                     key={playerId}
@@ -87,10 +89,10 @@ function App() {
                   />
                 ))}
               </Suspense>
+              <PlayerController />
             </Canvas>
 
             <GameUI />
-            <PlayerController />
 
             {gamePhase === "round_end" && <RoundEnd />}
             {gamePhase === "match_end" && <MatchEnd />}

@@ -2,8 +2,13 @@ import { useEffect, useRef } from "react";
 import { io, Socket } from "socket.io-client";
 import { useFightingGame, PlayerData } from "./stores/useFightingGame";
 
+// Create a singleton socket instance outside the hook
+const socket = io(window.location.origin, {
+  transports: ["websocket", "polling"],
+  autoConnect: false, // We'll connect it manually when needed
+});
+
 export function useSocket() {
-  const socketRef = useRef<Socket | null>(null);
   const {
     setLocalPlayerId,
     setPlayers,
@@ -17,25 +22,23 @@ export function useSocket() {
   } = useFightingGame();
 
   useEffect(() => {
-    const socket = io(window.location.origin, {
-      transports: ["websocket", "polling"],
-    });
+    if (!socket.connected) {
+      socket.connect();
+    }
 
-    socketRef.current = socket;
-
-    socket.on("connect", () => {
+    const onConnect = () => {
       console.log("Connected to server:", socket.id);
-      setLocalPlayerId(socket.id);
-    });
+      setLocalPlayerId(socket.id!);
+    };
 
-    socket.on("player-joined", (data: { playerId: string; playerState: PlayerData; totalPlayers: number }) => {
+    const onPlayerJoined = (data: { playerId: string; playerState: PlayerData; totalPlayers: number }) => {
       console.log("Player joined:", data);
       const players = new Map(useFightingGame.getState().players);
       players.set(data.playerId, data.playerState);
       setPlayers(players);
-    });
+    };
 
-    socket.on("game-start", (data: { players: Array<{ id: string } & PlayerData> }) => {
+    const onGameStart = (data: { players: Array<{ id: string } & PlayerData> }) => {
       console.log("Game starting:", data);
       const playersMap = new Map<string, PlayerData>();
       data.players.forEach((p) => {
@@ -56,38 +59,38 @@ export function useSocket() {
       });
       setPlayers(playersMap);
       setGamePhase("fighting");
-    });
+    };
 
-    socket.on("opponent-update", (data: { playerId: string; playerState: PlayerData }) => {
+    const onOpponentUpdate = (data: { playerId: string; playerState: PlayerData }) => {
       updatePlayer(data.playerId, data.playerState);
-    });
+    };
 
-    socket.on("opponent-attack", (data: { playerId: string; attackType: string; attackData: any }) => {
+    const onOpponentAttack = (data: { playerId: string; attackType: string; attackData: any }) => {
       updatePlayer(data.playerId, {
         isAttacking: true,
         attackType: data.attackType,
       });
-    });
+    };
 
-    socket.on("player-damaged", (data: { playerId: string; health: number; damage: number }) => {
+    const onPlayerDamaged = (data: { playerId: string; health: number; damage: number }) => {
       console.log("Player damaged:", data);
       updatePlayer(data.playerId, { health: data.health });
-    });
+    };
 
-    socket.on("round-end", (data: { winner: number; roundsWon: { player1: number; player2: number } }) => {
+    const onRoundEnd = (data: { winner: number; roundsWon: { player1: number; player2: number } }) => {
       console.log("Round ended:", data);
       setRoundsWon(data.roundsWon);
       setRoundWinner(data.winner);
       setGamePhase("round_end");
-    });
+    };
 
-    socket.on("match-end", (data: { winner: number; roundsWon: { player1: number; player2: number } }) => {
+    const onMatchEnd = (data: { winner: number; roundsWon: { player1: number; player2: number } }) => {
       console.log("Match ended:", data);
       setMatchWinner(data.winner);
       setGamePhase("match_end");
-    });
+    };
 
-    socket.on("round-reset", (data: { currentRound: number; players: Array<{ id: string } & PlayerData> }) => {
+    const onRoundReset = (data: { currentRound: number; players: Array<{ id: string } & PlayerData> }) => {
       console.log("Round reset:", data);
       const playersMap = new Map<string, PlayerData>();
       data.players.forEach((p) => {
@@ -110,9 +113,9 @@ export function useSocket() {
       setCurrentRound(data.currentRound);
       setRoundWinner(null);
       setGamePhase("fighting");
-    });
+    };
 
-    socket.on("match-reset", (data: { players: Array<{ id: string } & PlayerData> }) => {
+    const onMatchReset = (data: { players: Array<{ id: string } & PlayerData> }) => {
       console.log("Match reset:", data);
       const playersMap = new Map<string, PlayerData>();
       data.players.forEach((p) => {
@@ -137,71 +140,102 @@ export function useSocket() {
       setMatchWinner(null);
       setRoundWinner(null);
       setGamePhase("fighting");
-    });
+    };
 
-    socket.on("player-left", (data: { playerId: string }) => {
+    const onPlayerLeft = (data: { playerId: string }) => {
       console.log("Player left:", data);
       const players = new Map(useFightingGame.getState().players);
       players.delete(data.playerId);
       setPlayers(players);
       setGamePhase("menu");
-    });
+    };
 
-    socket.on("disconnect", () => {
+    const onDisconnect = () => {
       console.log("Disconnected from server");
-    });
+    };
 
+    // Attach listeners
+    socket.on("connect", onConnect);
+    socket.on("player-joined", onPlayerJoined);
+    socket.on("game-start", onGameStart);
+    socket.on("opponent-update", onOpponentUpdate);
+    socket.on("opponent-attack", onOpponentAttack);
+    socket.on("player-damaged", onPlayerDamaged);
+    socket.on("round-end", onRoundEnd);
+    socket.on("match-end", onMatchEnd);
+    socket.on("round-reset", onRoundReset);
+    socket.on("match-reset", onMatchReset);
+    socket.on("player-left", onPlayerLeft);
+    socket.on("disconnect", onDisconnect);
+
+    // Initial check if already connected
+    if (socket.connected) {
+      setLocalPlayerId(socket.id!);
+    }
+
+    // Cleanup listeners on unmount
     return () => {
-      socket.disconnect();
+      socket.off("connect", onConnect);
+      socket.off("player-joined", onPlayerJoined);
+      socket.off("game-start", onGameStart);
+      socket.off("opponent-update", onOpponentUpdate);
+      socket.off("opponent-attack", onOpponentAttack);
+      socket.off("player-damaged", onPlayerDamaged);
+      socket.off("round-end", onRoundEnd);
+      socket.off("match-end", onMatchEnd);
+      socket.off("round-reset", onRoundReset);
+      socket.off("match-reset", onMatchReset);
+      socket.off("player-left", onPlayerLeft);
+      socket.off("disconnect", onDisconnect);
     };
   }, []);
 
   const createRoom = (callback: (result: { success: boolean; roomId?: string; error?: string }) => void) => {
-    socketRef.current?.emit("create-room", callback);
+    socket.emit("create-room", callback);
   };
 
   const joinRoom = (roomId: string, callback: (result: { success: boolean; roomId?: string; error?: string }) => void) => {
-    socketRef.current?.emit("join-room", roomId, callback);
+    socket.emit("join-room", roomId, callback);
   };
 
   const playerReady = (characterId: number) => {
     if (roomId) {
-      socketRef.current?.emit("player-ready", { roomId, characterId });
+      socket.emit("player-ready", { roomId, characterId });
     }
   };
 
   const sendPlayerUpdate = (playerState: Partial<PlayerData>) => {
     if (roomId) {
-      socketRef.current?.emit("player-update", { roomId, playerState });
+      socket.emit("player-update", { roomId, playerState });
     }
   };
 
   const sendAttack = (attackType: string, attackData: any) => {
     if (roomId) {
-      socketRef.current?.emit("attack", { roomId, attackType, attackData });
+      socket.emit("attack", { roomId, attackType, attackData });
     }
   };
 
   const confirmHit = (targetId: string, damage: number) => {
     if (roomId) {
-      socketRef.current?.emit("hit-confirmed", { roomId, targetId, damage });
+      socket.emit("hit-confirmed", { roomId, targetId, damage });
     }
   };
 
   const resetRound = () => {
     if (roomId) {
-      socketRef.current?.emit("reset-round", roomId);
+      socket.emit("reset-round", roomId);
     }
   };
 
   const resetMatch = () => {
     if (roomId) {
-      socketRef.current?.emit("reset-match", roomId);
+      socket.emit("reset-match", roomId);
     }
   };
 
   return {
-    socket: socketRef.current,
+    socket,
     createRoom,
     joinRoom,
     playerReady,
